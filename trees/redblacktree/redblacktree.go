@@ -57,7 +57,7 @@ func NewWith[K comparable, V any](comparator utils.Comparator[K]) *Tree[K, V] {
 
 // Put inserts node into the tree.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (tree *Tree[K, V]) Put(key K, value V) {
+func (tree *Tree[K, V]) Put(key K, value V) bool {
 	var insertedNode *Node[K, V]
 	if tree.Root == nil {
 		// Assert key is of comparator's type for initial tree
@@ -71,9 +71,7 @@ func (tree *Tree[K, V]) Put(key K, value V) {
 			compare := tree.Comparator(key, node.Key)
 			switch {
 			case compare == 0:
-				node.Key = key
-				node.Value = value
-				return
+				return false
 			case compare < 0:
 				if node.Left == nil {
 					node.Left = &Node[K, V]{Key: key, Value: value, color: red}
@@ -96,6 +94,7 @@ func (tree *Tree[K, V]) Put(key K, value V) {
 	}
 	tree.insertCase1(insertedNode)
 	tree.size++
+	return true
 }
 
 // Get searches the node in the tree by key and returns its value or nil if key is not found in tree.
