@@ -7,10 +7,30 @@ package redblacktree
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"slices"
 	"strings"
 	"testing"
 )
+
+func TestRBTree(t *testing.T) {
+	tree := New[int, int]()
+
+	for i := 0; i < 10; i++ {
+		tree.Put(i, i)
+
+	}
+
+	t.Log(tree.String())
+
+	tree.Remove(8)
+	tree.Remove(9)
+	tree.Remove(7)
+	tree.Remove(1)
+
+	t.Log(tree.String())
+
+}
 
 func TestRedBlackTreeGet(t *testing.T) {
 	tree := New[int, string]()
@@ -863,4 +883,20 @@ func BenchmarkRedBlackTreeRemove100000(b *testing.B) {
 	}
 	b.StartTimer()
 	benchmarkRemove(b, tree, size)
+}
+
+func benchmarkPutRemove(b *testing.B, tree *Tree[int, struct{}]) {
+	for n := 0; n < b.N; n++ {
+		tree.Put(rand.Int(), struct{}{})
+	}
+
+	for n := 0; n < b.N; n++ {
+		tree.Left().RemoveFrom(tree)
+	}
+}
+
+func BenchmarkRedBlackTreePutRemove(b *testing.B) {
+	tree := New[int, struct{}]()
+
+	benchmarkPutRemove(b, tree)
 }

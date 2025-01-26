@@ -28,6 +28,13 @@ const (
 	black, red color = true, false
 )
 
+func (c color) String() string {
+	if c {
+		return "BLACK"
+	}
+	return "RED"
+}
+
 // Tree holds elements of the red-black tree
 type Tree[K comparable, V any] struct {
 	Root       *Node[K, V]
@@ -55,9 +62,37 @@ func NewWith[K comparable, V any](comparator utils.Comparator[K]) *Tree[K, V] {
 	return &Tree[K, V]{Comparator: comparator}
 }
 
+func (node *Node[K, V]) RemoveFrom(tree *Tree[K, V]) bool {
+	var child *Node[K, V]
+
+	if node.Left != nil && node.Right != nil {
+		pred := node.Left.maximumNode()
+		node.Key = pred.Key
+		node.Value = pred.Value
+		node = pred
+	}
+	if node.Left == nil || node.Right == nil {
+		if node.Right == nil {
+			child = node.Left
+		} else {
+			child = node.Right
+		}
+		if node.color == black {
+			node.color = nodeColor(child)
+			tree.deleteCase1(node)
+		}
+		tree.replaceNode(node, child)
+		if node.Parent == nil && child != nil {
+			child.color = black
+		}
+	}
+	tree.size--
+	return true
+}
+
 // Put inserts node into the tree.
 // Key should adhere to the comparator's type assertion, otherwise method panics.
-func (tree *Tree[K, V]) Put(key K, value V) bool {
+func (tree *Tree[K, V]) Put(key K, value V) *Node[K, V] {
 	var insertedNode *Node[K, V]
 	if tree.Root == nil {
 		// Assert key is of comparator's type for initial tree
@@ -71,7 +106,7 @@ func (tree *Tree[K, V]) Put(key K, value V) bool {
 			compare := tree.Comparator(key, node.Key)
 			switch {
 			case compare == 0:
-				return false
+				return node
 			case compare < 0:
 				if node.Left == nil {
 					node.Left = &Node[K, V]{Key: key, Value: value, color: red}
@@ -94,7 +129,7 @@ func (tree *Tree[K, V]) Put(key K, value V) bool {
 	}
 	tree.insertCase1(insertedNode)
 	tree.size++
-	return true
+	return insertedNode
 }
 
 // Get searches the node in the tree by key and returns its value or nil if key is not found in tree.
@@ -290,7 +325,7 @@ func (tree *Tree[K, V]) String() string {
 }
 
 func (node *Node[K, V]) String() string {
-	return fmt.Sprintf("%v", node.Key)
+	return fmt.Sprintf("%v: %v: %v", node.Key, node.Value, node.color)
 }
 
 func output[K comparable, V any](node *Node[K, V], prefix string, isTail bool, str *string) {
